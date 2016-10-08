@@ -3,6 +3,9 @@
 
 ## GloVe: Global Vectors for Word Representation
 
+### The goal of this fork is to allow for GloVe to be simply and seamlessly integrated into an existing C/C++ project using CMake. Anything that does not contribute to this goal has been removed.
+### GloVe will now compile to a single C library (both static and shared versions) instead of several separate executables.
+
 <em>frog</em> nearest neighbors | Litoria             |  Leptodactylidae | Rana | Eleutherodactylus
 -------------------------|:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
 <li> frogs <li> toad <li> litoria <li> leptodactylidae <li> rana <li> lizard <li> eleutherodactylus | ![](http://nlp.stanford.edu/projects/glove/images/litoria.jpg)  |  ![](http://nlp.stanford.edu/projects/glove/images/leptodactylidae.jpg) |  ![](http://nlp.stanford.edu/projects/glove/images/rana.jpg) |  ![](http://nlp.stanford.edu/projects/glove/images/eleutherodactylus.jpg)
