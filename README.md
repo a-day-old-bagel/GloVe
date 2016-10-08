@@ -1,10 +1,6 @@
-### The goal of this fork is to allow for GloVe to be simply and seamlessly integrated into an existing C/C++ project using CMake. Anything that does not contribute to this goal has been removed.
-### GloVe will now compile to a single C library (both static and shared versions) instead of several separate executables.
+### The goal of this fork is to allow for GloVe to be simply and seamlessly integrated into an existing C/C++ project using CMake. Anything that does not contribute to this goal has been removed. GloVe will now compile to a single C library (both static and shared versions) instead of several separate executables.
 
 ## GloVe: Global Vectors for Word Representation
-
-### The goal of this fork is to allow for GloVe to be simply and seamlessly integrated into an existing C/C++ project using CMake. Anything that does not contribute to this goal has been removed.
-### GloVe will now compile to a single C library (both static and shared versions) instead of several separate executables.
 
 <em>frog</em> nearest neighbors | Litoria             |  Leptodactylidae | Rana | Eleutherodactylus
 -------------------------|:-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
