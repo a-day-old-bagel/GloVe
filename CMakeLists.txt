@@ -12,5 +12,5 @@ set(CMAKE_C_FLAGS " -fPIC -lm -pthread -Ofast -march=native -funroll-loops -Wno-
 add_subdirectory("./src")
 
 IF(GLOVE_BUILD_TESTS)
-    add_subdirectory("tests")
+    add_subdirectory("demo")
 ENDIF()
