@@ -3,6 +3,8 @@
 //  Copyright (c) 2014 The Board of Trustees of
 //  The Leland Stanford Junior University. All Rights Reserved.
 //
+//  Modification copyright (c) 2016 Galen Cochrane
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -29,6 +31,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <time.h>
+#include "../include/glove.h"
 
 #define _FILE_OFFSET_BITS 64
 #define MAX_STRING_LENGTH 1000
@@ -41,28 +44,28 @@ typedef struct cooccur_rec {
     real val;
 } CREC;
 
-int verbose = 2; // 0, 1, or 2
-int use_unk_vec = 1; // 0 or 1
-int num_threads = 8; // pthreads
-int num_iter = 25; // Number of full passes through cooccurrence matrix
-int vector_size = 50; // Word vector size
-int save_gradsq = 0; // By default don't save squared gradient values
-int use_binary = 0; // 0: save as text files; 1: save as binary; 2: both. For binary, save both word and context word vectors.
-int model = 2; // For text file output only. 0: concatenate word and context vectors (and biases) i.e. save everything; 1: Just save word vectors (no bias); 2: Save (word + context word) vectors (no biases)
-int checkpoint_every = 0; // checkpoint the model for every checkpoint_every iterations. Do nothing if checkpoint_every <= 0
-real eta = 0.05; // Initial learning rate
-real alpha = 0.75, x_max = 100.0; // Weighting function parameters, not extremely sensitive to corpus, though may need adjustment for very small or very large corpora
-real *W, *gradsq, *cost;
-long long num_lines, *lines_per_thread, vocab_size;
-char *vocab_file, *input_file, *save_W_file, *save_gradsq_file;
+static int verbose; // 0, 1, or 2
+static int num_threads; // pthreads
+static int num_iter; // Number of full passes through cooccurrence matrix
+static int vector_size; // Word vector size
+static int save_gradsq; // By default don't save squared gradient values
+static int use_binary; // 0: save as text files; 1: save as binary; 2: both. For binary, save both word and context word vectors.
+static int model; // For text file output only. 0: concatenate word and context vectors (and biases) i.e. save everything; 1: Just save word vectors (no bias); 2: Save (word + context word) vectors (no biases)
+static int checkpoint_every; // checkpoint the model for every checkpoint_every iterations. Do nothing if checkpoint_every <= 0
+static real eta; // Initial learning rate
+static real alpha, x_max; // Weighting function parameters, not extremely sensitive to corpus, though may need adjustment for very small or very large corpora
+static real *W, *gradsq, *cost;
+static long long num_lines, *lines_per_thread, vocab_size;
+static char *vocab_file, *input_file, *save_W_file, *save_gradsq_file;
+static int use_unk_vec = 1; // 0 or 1
 
 /* Efficient string comparison */
-int scmp( char *s1, char *s2 ) {
+static int scmp( char *s1, char *s2 ) {
     while (*s1 != '\0' && *s1 == *s2) {s1++; s2++;}
     return(*s1 - *s2);
 }
 
-void initialize_parameters() {
+static void initialize_parameters() {
 	long long a, b;
 	vector_size++; // Temporarily increment to allocate space for bias
     
@@ -82,7 +85,7 @@ void initialize_parameters() {
 	vector_size--;
 }
 
-inline real check_nan(real update) {
+static inline real check_nan(real update) {
     if (isnan(update) || isinf(update)) {
         fprintf(stderr,"\ncaught NaN in update");
         return 0.;
@@ -92,7 +95,7 @@ inline real check_nan(real update) {
 }
 
 /* Train the GloVe model */
-void *glove_thread(void *vid) {
+static void *glove_thread(void *vid) {
     long long a, b ,l1, l2;
     long long id = *(long long*)vid;
     CREC cr;
@@ -166,7 +169,7 @@ void *glove_thread(void *vid) {
 }
 
 /* Save params to file */
-int save_params(int nb_iter) {
+static int save_params(int nb_iter) {
     /*
      * nb_iter is the number of iteration (= a full pass through the cooccurrence matrix).
      *   nb_iter > 0 => checkpointing the intermediate parameters, so nb_iter is in the filename of output file.
@@ -280,7 +283,7 @@ int save_params(int nb_iter) {
 }
 
 /* Train model */
-int train_glove() {
+static int train_glove() {
     long long a, file_size;
     int save_params_return_code;
     int b;
@@ -340,21 +343,7 @@ int train_glove() {
     return save_params(0);
 }
 
-int find_arg(char *str, int argc, char **argv) {
-    int i;
-    for (i = 1; i < argc; i++) {
-        if (!scmp(str, argv[i])) {
-            if (i == argc - 1) {
-                printf("No argument given for %s\n", str);
-                exit(1);
-            }
-            return i;
-        }
-    }
-    return -1;
-}
-
-int main(int argc, char **argv) {
+/*int main(int argc, char **argv) {
     int i;
     FILE *fid;
     vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
@@ -362,7 +351,7 @@ int main(int argc, char **argv) {
     save_W_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
     save_gradsq_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
     int result = 0;
-    
+
     if (argc == 1) {
         printf("GloVe: Global Vectors for Word Representation, v0.2\n");
         printf("Author: Jeffrey Pennington (jpennin@stanford.edu)\n\n");
@@ -428,7 +417,7 @@ int main(int argc, char **argv) {
         if ((i = find_arg((char *)"-input-file", argc, argv)) > 0) strcpy(input_file, argv[i + 1]);
         else strcpy(input_file, (char *)"cooccurrence.shuf.bin");
         if ((i = find_arg((char *)"-checkpoint-every", argc, argv)) > 0) checkpoint_every = atoi(argv[i + 1]);
-        
+
         vocab_size = 0;
         fid = fopen(vocab_file, "r");
         if (fid == NULL) {fprintf(stderr, "Unable to open vocab file %s.\n",vocab_file); return 1;}
@@ -438,6 +427,65 @@ int main(int argc, char **argv) {
         result = train_glove();
         free(cost);
     }
+    free(vocab_file);
+    free(input_file);
+    free(save_W_file);
+    free(save_gradsq_file);
+    return result;
+}*/
+
+static const GloveArgs DEFAULT_GLOVE_ARGS = {
+        .verbose = 0, .vectorSize = 50, .threads = 8, .iter = 25, .eta = 0.05, .alpha = 0.75, .xMax = 100.f,
+        .binary = 0, .model = 2, .inputFile = "cooccurrence.shuf.bin", .vocabFile = "vocab.txt", .saveFile = "vectors",
+        .gradsqFile = "gradsq", .saveGradsq = 0, .checkpointEvery = 0
+};
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int createGloveArgs(GloveArgs* emptyArgs) {
+    *emptyArgs = DEFAULT_GLOVE_ARGS;
+    return 0;
+}
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int glove(const GloveArgs* args) {
+    FILE *fid;
+    vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
+    input_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
+    save_W_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
+    save_gradsq_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
+    int result = 0;
+
+    verbose = args->verbose;
+    vector_size = args->vectorSize;
+    num_iter = args->iter;
+    num_threads = args->threads;
+    alpha = args->alpha;
+    x_max = args->xMax;
+    eta = args->eta;
+    use_binary = args->binary;
+    model = args->model;
+    strcpy(save_gradsq_file, args->gradsqFile);
+    save_gradsq = args->saveGradsq;
+    strcpy(vocab_file, args->vocabFile);
+    strcpy(save_W_file, args->saveFile);
+    strcpy(input_file, args->inputFile);
+    checkpoint_every = args->checkpointEvery;
+
+    cost = malloc(sizeof(real) * num_threads);
+    if (model != 0 && model != 1 && model != 2) model = DEFAULT_GLOVE_ARGS.model;
+
+    vocab_size = 0;
+    fid = fopen(vocab_file, "r");
+    if (fid == NULL) { fprintf(stderr, "Unable to open vocab file %s.\n",vocab_file); return 1; }
+    int i;
+    while ((i = getc(fid)) != EOF) if (i == '\n') vocab_size++; // Count number of entries in vocab_file
+    fclose(fid);
+
+    result = train_glove();
+    free(cost);
+
     free(vocab_file);
     free(input_file);
     free(save_W_file);

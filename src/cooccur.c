@@ -3,6 +3,8 @@
 //  Copyright (c) 2014 The Board of Trustees of
 //  The Leland Stanford Junior University. All Rights Reserved.
 //
+//  Modification copyright (c) 2016 Galen Cochrane
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -25,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "../include/glove.h"
 
 #define TSIZE 1048576
 #define SEED 1159241
@@ -52,16 +55,16 @@ typedef struct hashrec {
     struct hashrec *next;
 } HASHREC;
 
-int verbose = 2; // 0, 1, or 2
-long long max_product; // Cutoff for product of word frequency ranks below which cooccurrence counts will be stored in a compressed full array
-long long overflow_length; // Number of cooccurrence records whose product exceeds max_product to store in memory before writing to disk
-int window_size = 15; // default context window size
-int symmetric = 1; // 0: asymmetric, 1: symmetric
-real memory_limit = 3; // soft limit, in gigabytes, used to estimate optimal array sizes
-char *vocab_file, *file_head;
+static int verbose; // 0, 1, or 2
+static long long max_product; // Cutoff for product of word frequency ranks below which cooccurrence counts will be stored in a compressed full array
+static long long overflow_length; // Number of cooccurrence records whose product exceeds max_product to store in memory before writing to disk
+static int window_size; // default context window size
+static int symmetric; // 0: asymmetric, 1: symmetric
+static real memory_limit; // soft limit, in gigabytes, used to estimate optimal array sizes
+static char *vocab_file, *file_head;
 
 /* Efficient string comparison */
-int scmp( char *s1, char *s2 ) {
+static int scmp( char *s1, char *s2 ) {
     while (*s1 != '\0' && *s1 == *s2) {s1++; s2++;}
     return(*s1 - *s2);
 }
@@ -69,16 +72,16 @@ int scmp( char *s1, char *s2 ) {
 /* Move-to-front hashing and hash function from Hugh Williams, http://www.seg.rmit.edu.au/code/zwh-ipl/ */
 
 /* Simple bitwise hash function */
-unsigned int bitwisehash(char *word, int tsize, unsigned int seed) {
+static unsigned int bitwisehash(char *word, int tsize, unsigned int seed) {
     char c;
     unsigned int h;
     h = seed;
     for (; (c =* word) != '\0'; word++) h ^= ((h << 5) + c + (h >> 2));
-    return((unsigned int)((h&0x7fffffff) % tsize));
+    return(((h&0x7fffffff) % tsize));
 }
 
 /* Create hash table, initialise pointers to NULL */
-HASHREC ** inithashtable() {
+static HASHREC ** inithashtable() {
     int	i;
     HASHREC **ht;
     ht = (HASHREC **) malloc( sizeof(HASHREC *) * TSIZE );
@@ -87,7 +90,7 @@ HASHREC ** inithashtable() {
 }
 
 /* Search hash table for given string, return record if found, else NULL */
-HASHREC *hashsearch(HASHREC **ht, char *w) {
+static HASHREC *hashsearch(HASHREC **ht, char *w) {
     HASHREC	*htmp, *hprv;
     unsigned int hval = HASHFN(w, TSIZE, SEED);
     for (hprv = NULL, htmp=ht[hval]; htmp != NULL && scmp(htmp->word, w) != 0; hprv = htmp, htmp = htmp->next);
@@ -100,7 +103,7 @@ HASHREC *hashsearch(HASHREC **ht, char *w) {
 }
 
 /* Insert string in hash table, check for duplicates which should be absent */
-void hashinsert(HASHREC **ht, char *w, long long id) {
+static void hashinsert(HASHREC **ht, char *w, long long id) {
     HASHREC	*htmp, *hprv;
     unsigned int hval = HASHFN(w, TSIZE, SEED);
     for (hprv = NULL, htmp = ht[hval]; htmp != NULL && scmp(htmp->word, w) != 0; hprv = htmp, htmp = htmp->next);
@@ -118,7 +121,7 @@ void hashinsert(HASHREC **ht, char *w, long long id) {
 }
 
 /* Read word from input stream */
-int get_word(char *word, FILE *fin) {
+static int get_word(char *word, FILE *fin) {
     int i = 0, ch;
     while (!feof(fin)) {
         ch = fgetc(fin);
@@ -139,7 +142,7 @@ int get_word(char *word, FILE *fin) {
 }
 
 /* Write sorted chunk of cooccurrence records to file, accumulating duplicate entries */
-int write_chunk(CREC *cr, long long length, FILE *fout) {
+static int write_chunk(CREC *cr, long long length, FILE *fout) {
     if (length == 0) return 0;
 
     long long a = 0;
@@ -158,7 +161,7 @@ int write_chunk(CREC *cr, long long length, FILE *fout) {
 }
 
 /* Check if two cooccurrence records are for the same two words, used for qsort */
-int compare_crec(const void *a, const void *b) {
+static int compare_crec(const void *a, const void *b) {
     int c;
     if ( (c = ((CREC *) a)->word1 - ((CREC *) b)->word1) != 0) return c;
     else return (((CREC *) a)->word2 - ((CREC *) b)->word2);
@@ -166,21 +169,21 @@ int compare_crec(const void *a, const void *b) {
 }
 
 /* Check if two cooccurrence records are for the same two words */
-int compare_crecid(CRECID a, CRECID b) {
+static int compare_crecid(CRECID a, CRECID b) {
     int c;
     if ( (c = a.word1 - b.word1) != 0) return c;
     else return a.word2 - b.word2;
 }
 
 /* Swap two entries of priority queue */
-void swap_entry(CRECID *pq, int i, int j) {
+static void swap_entry(CRECID *pq, int i, int j) {
     CRECID temp = pq[i];
     pq[i] = pq[j];
     pq[j] = temp;
 }
 
 /* Insert entry into priority queue */
-void insert(CRECID *pq, CRECID new, int size) {
+static void insert(CRECID *pq, CRECID new, int size) {
     int j = size - 1, p;
     pq[j] = new;
     while ( (p=(j-1)/2) >= 0 ) {
@@ -190,7 +193,7 @@ void insert(CRECID *pq, CRECID new, int size) {
 }
 
 /* Delete entry from priority queue */
-void delete(CRECID *pq, int size) {
+static void delete(CRECID *pq, int size) {
     int j, p = 0;
     pq[p] = pq[size - 1];
     while ( (j = 2*p+1) < size - 1 ) {
@@ -212,7 +215,7 @@ void delete(CRECID *pq, int size) {
 }
 
 /* Write top node of priority queue to file, accumulating duplicate entries */
-int merge_write(CRECID new, CRECID *old, FILE *fout) {
+static int merge_write(CRECID new, CRECID *old, FILE *fout) {
     if (new.word1 == old->word1 && new.word2 == old->word2) {
         old->val += new.val;
         return 0; // Indicates duplicate entry
@@ -223,7 +226,7 @@ int merge_write(CRECID new, CRECID *old, FILE *fout) {
 }
 
 /* Merge [num] sorted files of cooccurrence records */
-int merge_files(int num) {
+static int merge_files(int num) {
     int i, size;
     long long counter = 0;
     CRECID *pq, new, old;
@@ -280,7 +283,7 @@ int merge_files(int num) {
 }
 
 /* Collect word-word cooccurrence counts from input stream */
-int get_cooccurrence() {
+static int get_cooccurrence() {
     int flag, x, y, fidcounter = 1;
     long long a, j = 0, k, id, counter = 0, ind = 0, vocab_size, w1, w2, *lookup, *history;
     char format[20], filename[200], str[MAX_STRING_LENGTH + 1];
@@ -407,21 +410,7 @@ int get_cooccurrence() {
     return merge_files(fidcounter + 1); // Merge the sorted temporary files
 }
 
-int find_arg(char *str, int argc, char **argv) {
-    int i;
-    for (i = 1; i < argc; i++) {
-        if (!scmp(str, argv[i])) {
-            if (i == argc - 1) {
-                printf("No argument given for %s\n", str);
-                exit(1);
-            }
-            return i;
-        }
-    }
-    return -1;
-}
-
-int main(int argc, char **argv) {
+/*int main(int argc, char **argv) {
     int i;
     real rlimit, n = 1e5;
     vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
@@ -462,17 +451,56 @@ int main(int argc, char **argv) {
     else strcpy(file_head, (char *)"overflow");
     if ((i = find_arg((char *)"-memory", argc, argv)) > 0) memory_limit = atof(argv[i + 1]);
     
+    *//* The memory_limit determines a limit on the number of elements in bigram_table and the overflow buffer *//*
+    *//* Estimate the maximum value that max_product can take so that this limit is still satisfied *//*
+    rlimit = 0.85 * (real)memory_limit * 1073741824/(sizeof(CREC));
+    while (fabs(rlimit - n * (log(n) + 0.1544313298)) > 1e-3) n = rlimit / (log(n) + 0.1544313298);
+    max_product = (long long) n;
+    overflow_length = (long long) rlimit/6; // 0.85 + 1/6 ~= 1
+    
+    *//* Override estimates by specifying limits explicitly on the command line *//*
+    if ((i = find_arg((char *)"-max-product", argc, argv)) > 0) max_product = atoll(argv[i + 1]);
+    if ((i = find_arg((char *)"-overflow-length", argc, argv)) > 0) overflow_length = atoll(argv[i + 1]);
+    
+    return get_cooccurrence();
+}*/
+
+static const CooccurArgs DEFAULT_COOCCUR_ARGS = {
+        .verbose = 0, .symmetric = 1, .windowSize = 15, .vocabFile = "vocab.txt", .memory = 4, .maxProduct = -1,
+        .overflowLength = -1, .overflowFile = "overflow"
+};
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int createCooccurArgs(CooccurArgs* emptyArgs) {
+    *emptyArgs = DEFAULT_COOCCUR_ARGS;
+    return 0;
+}
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int cooccur(const CooccurArgs* args) {
+    real rlimit, n = 1e5;
+    vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
+    file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);
+
+    verbose = args->verbose;
+    symmetric = args->symmetric;
+    window_size = args->windowSize;
+    strcpy(vocab_file, args->vocabFile);
+    strcpy(file_head, args->overflowFile);
+    memory_limit = args->memory;
+
     /* The memory_limit determines a limit on the number of elements in bigram_table and the overflow buffer */
     /* Estimate the maximum value that max_product can take so that this limit is still satisfied */
     rlimit = 0.85 * (real)memory_limit * 1073741824/(sizeof(CREC));
     while (fabs(rlimit - n * (log(n) + 0.1544313298)) > 1e-3) n = rlimit / (log(n) + 0.1544313298);
     max_product = (long long) n;
     overflow_length = (long long) rlimit/6; // 0.85 + 1/6 ~= 1
-    
+
     /* Override estimates by specifying limits explicitly on the command line */
-    if ((i = find_arg((char *)"-max-product", argc, argv)) > 0) max_product = atoll(argv[i + 1]);
-    if ((i = find_arg((char *)"-overflow-length", argc, argv)) > 0) overflow_length = atoll(argv[i + 1]);
-    
+    if (args->maxProduct > 0) { max_product = args->maxProduct; }
+    if (args->overflowLength > 0) { overflow_length = args->overflowLength; }
+
     return get_cooccurrence();
 }
-

@@ -3,6 +3,8 @@
 //  Copyright (c) 2014 The Board of Trustees of
 //  The Leland Stanford Junior University. All Rights Reserved.
 //
+//  Modification copyright (c) 2016 Galen Cochrane
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -24,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "../include/glove.h"
 
 #define MAX_STRING_LENGTH 1000
 
@@ -36,17 +39,16 @@ typedef struct cooccur_rec {
     real val;
 } CREC;
 
-int verbose = 2; // 0, 1, or 2
-long long array_size = 2000000; // size of chunks to shuffle individually
-char *file_head; // temporary file string
-real memory_limit = 2.0; // soft limit, in gigabytes
+static int verbose; // 0, 1, or 2
+static long long array_size; // size of chunks to shuffle individually
+static char *file_head; // temporary file string
+static real memory_limit; // soft limit, in gigabytes
 
 /* Efficient string comparison */
-int scmp( char *s1, char *s2 ) {
+static int scmp( char *s1, char *s2 ) {
     while (*s1 != '\0' && *s1 == *s2) {s1++; s2++;}
     return(*s1 - *s2);
 }
-
 
 /* Generate uniformly distributed random long ints */
 static long rand_long(long n) {
@@ -59,14 +61,14 @@ static long rand_long(long n) {
 }
 
 /* Write contents of array to binary file */
-int write_chunk(CREC *array, long size, FILE *fout) {
+static int write_chunk(CREC *array, long size, FILE *fout) {
     long i = 0;
     for (i = 0; i < size; i++) fwrite(&array[i], sizeof(CREC), 1, fout);
     return 0;
 }
 
 /* Fisher-Yates shuffle */
-void shuffle(CREC *array, long n) {
+static void fvShuffle(CREC *array, long n) {
     long i, j;
     CREC tmp;
     for (i = n - 1; i > 0; i--) {
@@ -78,7 +80,7 @@ void shuffle(CREC *array, long n) {
 }
 
 /* Merge shuffled temporary files; doesn't necessarily produce a perfect shuffle, but good enough */
-int shuffle_merge(int num) {
+static int shuffle_merge(int num) {
     long i, j, k, l = 0;
     int fidcounter = 0;
     CREC *array;
@@ -110,7 +112,7 @@ int shuffle_merge(int num) {
         }
         if (i == 0) break;
         l += i;
-        shuffle(array, i-1); // Shuffles lines between temp files
+      fvShuffle(array, i - 1); // Shuffles lines between temp files
         write_chunk(array,i,fout);
         if (verbose > 0) fprintf(stderr, "\033[31G%ld lines.", l);
     }
@@ -126,7 +128,7 @@ int shuffle_merge(int num) {
 }
 
 /* Shuffle large input stream by splitting into chunks */
-int shuffle_by_chunks() {
+static int shuffle_by_chunks() {
     long i = 0, l = 0;
     int fidcounter = 0;
     char filename[MAX_STRING_LENGTH];
@@ -146,7 +148,7 @@ int shuffle_by_chunks() {
     
     while (1) { //Continue until EOF
         if (i >= array_size) {// If array is full, shuffle it and save to temporary file
-            shuffle(array, i-2);
+          fvShuffle(array, i - 2);
             l += i;
             if (verbose > 1) fprintf(stderr, "\033[22Gprocessed %ld lines.", l);
             write_chunk(array,i,fid);
@@ -164,7 +166,7 @@ int shuffle_by_chunks() {
         if (feof(fin)) break;
         i++;
     }
-    shuffle(array, i-2); //Last chunk may be smaller than array_size
+  fvShuffle(array, i - 2); //Last chunk may be smaller than array_size
     write_chunk(array,i,fid);
     l += i;
     if (verbose > 1) fprintf(stderr, "\033[22Gprocessed %ld lines.\n", l);
@@ -174,21 +176,7 @@ int shuffle_by_chunks() {
     return shuffle_merge(fidcounter + 1); // Merge and shuffle together temporary files
 }
 
-int find_arg(char *str, int argc, char **argv) {
-    int i;
-    for (i = 1; i < argc; i++) {
-        if (!scmp(str, argv[i])) {
-            if (i == argc - 1) {
-                printf("No argument given for %s\n", str);
-                exit(1);
-            }
-            return i;
-        }
-    }
-    return -1;
-}
-
-int main(int argc, char **argv) {
+/*int main(int argc, char **argv) {
     int i;
     file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);
     
@@ -217,5 +205,31 @@ int main(int argc, char **argv) {
     array_size = (long long) (0.95 * (real)memory_limit * 1073741824/(sizeof(CREC)));
     if ((i = find_arg((char *)"-array-size", argc, argv)) > 0) array_size = atoll(argv[i + 1]);
     return shuffle_by_chunks();
+}*/
+
+static const ShuffleArgs DEFAULT_SHUFFLE_ARGS = {
+        .verbose = 0, .memory = 4.0, .arraySize = -1, .tempFile = "temp_shuffle"
+};
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int createShuffleArgs(ShuffleArgs* emptyArgs) {
+  *emptyArgs = DEFAULT_SHUFFLE_ARGS;
+  return 0;
+}
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int shuffle(const ShuffleArgs* args) {
+  file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);
+
+  verbose = args->verbose;
+  strcpy(file_head, args->tempFile);
+  memory_limit = args->memory;
+
+  if (args->arraySize > 0) { array_size = args->arraySize; }
+  else { array_size = (long long) (0.95 * (real) memory_limit * 1073741824 / (sizeof(CREC))); }
+
+  return shuffle_by_chunks();
 }
 

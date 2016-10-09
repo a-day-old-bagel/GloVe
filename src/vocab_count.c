@@ -4,6 +4,8 @@
 //  Copyright (c) 2014 The Board of Trustees of
 //  The Leland Stanford Junior University. All Rights Reserved.
 //
+//  Modification copyright (c) 2016 Galen Cochrane
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
@@ -25,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "../include/glove.h"
 
 #define MAX_STRING_LENGTH 1000
 #define TSIZE	1048576
@@ -42,20 +45,18 @@ typedef struct hashrec {
     struct hashrec *next;
 } HASHREC;
 
-int verbose = 2; // 0, 1, or 2
-long long min_count = 1; // min occurrences for inclusion in vocab
-long long max_vocab = 0; // max_vocab = 0 for no limit
-
+static int verbose; // 0, 1, or 2
+static long long min_count; // min occurrences for inclusion in vocab min_count < 1 defaults to min_count = 1
+static long long max_vocab; // max_vocab <= 0 for no limit
 
 /* Efficient string comparison */
-int scmp( char *s1, char *s2 ) {
+static int scmp( char *s1, char *s2 ) {
     while (*s1 != '\0' && *s1 == *s2) {s1++; s2++;}
     return(*s1 - *s2);
 }
 
-
 /* Vocab frequency comparison; break ties alphabetically */
-int CompareVocabTie(const void *a, const void *b) {
+static int CompareVocabTie(const void *a, const void *b) {
     long long c;
     if ( (c = ((VOCAB *) b)->count - ((VOCAB *) a)->count) != 0) return ( c > 0 ? 1 : -1 );
     else return (scmp(((VOCAB *) a)->word,((VOCAB *) b)->word));
@@ -63,7 +64,7 @@ int CompareVocabTie(const void *a, const void *b) {
 }
 
 /* Vocab frequency comparison; no tie-breaker */
-int CompareVocab(const void *a, const void *b) {
+static int CompareVocab(const void *a, const void *b) {
     long long c;
     if ( (c = ((VOCAB *) b)->count - ((VOCAB *) a)->count) != 0) return ( c > 0 ? 1 : -1 );
     else return 0;
@@ -72,16 +73,16 @@ int CompareVocab(const void *a, const void *b) {
 /* Move-to-front hashing and hash function from Hugh Williams, http://www.seg.rmit.edu.au/code/zwh-ipl/ */
 
 /* Simple bitwise hash function */
-unsigned int bitwisehash(char *word, int tsize, unsigned int seed) {
+static unsigned int bitwisehash(char *word, int tsize, unsigned int seed) {
     char c;
     unsigned int h;
     h = seed;
     for (; (c =* word) != '\0'; word++) h ^= ((h << 5) + c + (h >> 2));
-    return((unsigned int)((h&0x7fffffff) % tsize));
+    return(((h&0x7fffffff) % tsize));
 }
 
 /* Create hash table, initialise pointers to NULL */
-HASHREC ** inithashtable() {
+static HASHREC ** inithashtable() {
     int	i;
     HASHREC **ht;
     ht = (HASHREC **) malloc( sizeof(HASHREC *) * TSIZE );
@@ -90,7 +91,7 @@ HASHREC ** inithashtable() {
 }
 
 /* Search hash table for given string, insert if not found */
-void hashinsert(HASHREC **ht, char *w) {
+static void hashinsert(HASHREC **ht, char *w) {
     HASHREC	*htmp, *hprv;
     unsigned int hval = HASHFN(w, TSIZE, SEED);
     
@@ -119,7 +120,7 @@ void hashinsert(HASHREC **ht, char *w) {
     return;
 }
 
-int get_counts() {
+static int get_counts() {
     long long i = 0, j = 0, vocab_size = 12500;
     char format[20];
     char str[MAX_STRING_LENGTH + 1];
@@ -175,21 +176,7 @@ int get_counts() {
     return 0;
 }
 
-int find_arg(char *str, int argc, char **argv) {
-    int i;
-    for (i = 1; i < argc; i++) {
-        if (!scmp(str, argv[i])) {
-            if (i == argc - 1) {
-                printf("No argument given for %s\n", str);
-                exit(1);
-            }
-            return i;
-        }
-    }
-    return -1;
-}
-
-int main(int argc, char **argv) {
+/*int main(int argc, char **argv) {
     int i;
     if (argc == 1) {
         printf("Simple tool to extract unigram counts\n");
@@ -210,5 +197,27 @@ int main(int argc, char **argv) {
     if ((i = find_arg((char *)"-max-vocab", argc, argv)) > 0) max_vocab = atoll(argv[i + 1]);
     if ((i = find_arg((char *)"-min-count", argc, argv)) > 0) min_count = atoll(argv[i + 1]);
     return get_counts();
-}
+}*/
 
+static const VocabCountArgs DEFAULT_VOCABCOUNT_ARGS = {
+        .verbose = 0, .maxVocab = -1, .minCount = 1
+};
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int createVocabCountArgs(VocabCountArgs* emptyArgs) {
+    *emptyArgs = DEFAULT_VOCABCOUNT_ARGS;
+    return 0;
+}
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int vocabCount(const VocabCountArgs* args) {
+    verbose = args->verbose;
+    max_vocab = args->maxVocab;
+    min_count = args->minCount;
+
+    if (min_count < 1) { min_count = 1; }
+
+    return get_counts();
+}

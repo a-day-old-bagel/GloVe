@@ -1,4 +1,4 @@
-### The goal of this fork is to allow for GloVe to be simply and seamlessly integrated into an existing C/C++ project using CMake. Anything that does not contribute to this goal has been removed. GloVe will now compile to a single C library (both static and shared versions) instead of several separate executables.
+### The goal of this fork is to allow for GloVe to be simply and seamlessly integrated into an existing C/C++ project using CMake. Anything not conducive to this goal has been removed. GloVe will now compile to a single C library (both static and shared versions) instead of several separate executables. Documentation can be found in include/glove.h
 
 ## GloVe: Global Vectors for Word Representation
 
@@ -10,7 +10,7 @@ man -> woman             |  city -> zip | comparative -> superlative
 :-------------------------:|:-------------------------:|:-------------------------:|:-------------------------:|
 ![](http://nlp.stanford.edu/projects/glove/images/man_woman_small.jpg)  |   ![](http://nlp.stanford.edu/projects/glove/images/city_zip_small.jpg) |  ![](http://nlp.stanford.edu/projects/glove/images/comparative_superlative_small.jpg)
 
-We provide an implementation of the GloVe model for learning word representations, and describe how to download web-dataset vectors or train your own. See the [project page](http://nlp.stanford.edu/projects/glove/) or the [paper](http://nlp.stanford.edu/pubs/glove.pdf) for more information on glove vectors.
+We provide an implementation of the GloVe model for learning word representations, and describe how to download web-dataset vectors or train your own. See the [paper](http://nlp.stanford.edu/pubs/glove.pdf) for more information on glove vectors.
 
 ## Download pre-trained word vectors
 The links below contain word vectors obtained from the respective corpora. If you want word vectors trained on massive web datasets, you need only download one of these text files! Pre-trained word vectors are made available under the <a href="http://opendatacommons.org/licenses/pddl/">Public Domain Dedication and License</a>. 
@@ -26,11 +26,14 @@ The links below contain word vectors obtained from the respective corpora. If yo
 ## Train word vectors on a new corpus
 If the web datasets above don't match the semantics of your end use case, you can train word vectors on your own corpus.
 
-    $ git clone http://github.com/stanfordnlp/glove
-    $ cd glove && make
+    $ git clone http://github.com/a-day-old-bagel/glove_c
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
     $ ./demo.sh
 
-The demo.sh scipt downloads a small corpus, consisting of the first 100M characters of Wikipedia. It collects unigram counts, constructs and shuffles cooccurrence data, and trains a simple version of the GloVe model. It also runs a word analogy evaluation script in python to verify word vector quality. More details about training on your own corpus can be found by reading [demo.sh](https://github.com/stanfordnlp/GloVe/blob/master/demo.sh) or the [src/README.md](https://github.com/stanfordnlp/GloVe/tree/master/src)
+The demo.sh scipt downloads a small corpus, consisting of the first 100M characters of Wikipedia. It collects unigram counts, constructs and shuffles cooccurrence data, and trains a simple version of the GloVe model. It also runs a word analogy evaluation script in python to verify word vector quality. More details about training on your own corpus can be found by reading [demo.sh](https://github.com/a-day-old-bagel/GloVe_C/blob/master/demo.sh) or the [include/glove.h](https://github.com/a-day-old-bagel/GloVe_C/tree/master/include)
 
 ### License
 All work contained in this package is licensed under the Apache License, Version 2.0. See the include LICENSE file.
