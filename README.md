@@ -27,10 +27,7 @@ The links below contain word vectors obtained from the respective corpora. If yo
 If the web datasets above don't match the semantics of your end use case, you can train word vectors on your own corpus.
 
     $ git clone http://github.com/a-day-old-bagel/glove_c
-    $ mkdir build
-    $ cd build
-    $ cmake ..
-    $ make
+    $ cd glove_c
     $ ./demo.sh
 
 The demo.sh scipt downloads a small corpus, consisting of the first 100M characters of Wikipedia. It collects unigram counts, constructs and shuffles cooccurrence data, and trains a simple version of the GloVe model. It also runs a word analogy evaluation script in python to verify word vector quality. More details about training on your own corpus can be found by reading [demo.sh](https://github.com/a-day-old-bagel/GloVe_C/blob/master/demo.sh) or the [include/glove.h](https://github.com/a-day-old-bagel/GloVe_C/tree/master/include)
