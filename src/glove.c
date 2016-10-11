@@ -345,8 +345,7 @@ static int train_glove() {
 
 static const GloveArgs DEFAULT_GLOVE_ARGS = {
         .verbose = 0, .vectorSize = 50, .threads = 8, .iter = 25, .eta = 0.05, .alpha = 0.75, .xMax = 100.f,
-        .binary = 0, .model = 2, .inputFile = "cooccurrence.shuf.bin", .vocabFile = "vocab.txt", .saveFile = "vectors",
-        .gradsqFile = "gradsq", .saveGradsq = 0, .checkpointEvery = 0
+        .binary = 0, .model = 2, .saveGradsq = 0, .checkpointEvery = 0, .mode = 0
 };
 #ifdef _WIN32
 __declspec(dllexport)
@@ -358,7 +357,7 @@ int createGloveArgs(GloveArgs* emptyArgs) {
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int glove(const GloveArgs* args) {
+int glove(const GloveArgs* args, const char* shufCooccurIn, const char* vocabIn, char* gloveOut, char* gradsqOut) {
     FILE *fid;
     vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
     input_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
@@ -375,11 +374,11 @@ int glove(const GloveArgs* args) {
     eta = args->eta;
     use_binary = args->binary;
     model = args->model;
-    strcpy(save_gradsq_file, args->gradsqFile);
+//    strcpy(save_gradsq_file, args->gradsqFile);
     save_gradsq = args->saveGradsq;
-    strcpy(vocab_file, args->vocabFile);
-    strcpy(save_W_file, args->saveFile);
-    strcpy(input_file, args->inputFile);
+//    strcpy(vocab_file, args->vocabFile);
+//    strcpy(save_W_file, args->saveFile);
+//    strcpy(input_file, args->inputFile);
     checkpoint_every = args->checkpointEvery;
 
     cost = malloc(sizeof(real) * num_threads);

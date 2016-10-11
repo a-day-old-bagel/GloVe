@@ -177,7 +177,7 @@ static int shuffle_by_chunks() {
 }
 
 static const ShuffleArgs DEFAULT_SHUFFLE_ARGS = {
-        .verbose = 0, .memory = 4.0, .arraySize = -1, .tempFile = "temp_shuffle"
+        .verbose = 0, .memory = 4.0, .arraySize = -1, .tempFile = "temp_shuffle", .mode = 0
 };
 #ifdef _WIN32
 __declspec(dllexport)
@@ -189,7 +189,7 @@ int createShuffleArgs(ShuffleArgs* emptyArgs) {
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int shuffle(const ShuffleArgs* args) {
+int shuffle(const ShuffleArgs* args, const char* cooccurIn, char* shufCooccurOut) {
   file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);
 
   verbose = args->verbose;

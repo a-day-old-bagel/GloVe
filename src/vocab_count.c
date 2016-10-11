@@ -177,7 +177,7 @@ static int get_counts() {
 }
 
 static const VocabCountArgs DEFAULT_VOCABCOUNT_ARGS = {
-        .verbose = 0, .maxVocab = -1, .minCount = 1
+        .verbose = 0, .maxVocab = -1, .minCount = 1, .mode = 0
 };
 #ifdef _WIN32
 __declspec(dllexport)
@@ -189,7 +189,7 @@ int createVocabCountArgs(VocabCountArgs* emptyArgs) {
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int vocabCount(const VocabCountArgs* args) {
+int vocabCount(const VocabCountArgs* args, const char* corpusIn, char* vocabOut) {
     verbose = args->verbose;
     max_vocab = args->maxVocab;
     min_count = args->minCount;
