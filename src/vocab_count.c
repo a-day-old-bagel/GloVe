@@ -48,6 +48,7 @@ typedef struct hashrec {
 static int verbose; // 0, 1, or 2
 static long long min_count; // min occurrences for inclusion in vocab min_count < 1 defaults to min_count = 1
 static long long max_vocab; // max_vocab <= 0 for no limit
+static FILE *in, *out;
 
 /* Efficient string comparison */
 static int scmp( char *s1, char *s2 ) {
@@ -127,7 +128,7 @@ static int get_counts() {
     HASHREC **vocab_hash = inithashtable();
     HASHREC *htmp;
     VOCAB *vocab;
-    FILE *fid = stdin;
+    FILE *fid = in;
     
     fprintf(stderr, "BUILDING VOCABULARY\n");
     if (verbose > 1) fprintf(stderr, "Processed %lld tokens.", i);
@@ -168,7 +169,7 @@ static int get_counts() {
             if (verbose > 0) fprintf(stderr, "Truncating vocabulary at min count %lld.\n",min_count);
             break;
         }
-        printf("%s %lld\n",vocab[i].word,vocab[i].count);
+        fprintf(out, "%s %lld\n",vocab[i].word,vocab[i].count);
     }
     
     if (i == max_vocab && max_vocab < j) if (verbose > 0) fprintf(stderr, "Truncating vocabulary at size %lld.\n", max_vocab);
@@ -194,7 +195,15 @@ int vocabCount(const VocabCountArgs* args, const char* corpusIn, char* vocabOut)
     max_vocab = args->maxVocab;
     min_count = args->minCount;
 
+    in = fopen(corpusIn, "r");
+    if (in == NULL) { fprintf(stderr,"Unable to open file %s.\n", corpusIn); return 1; }
+    out = fopen(vocabOut, "w");
+    if (out == NULL) { fprintf(stderr,"Unable to open file %s.\n", vocabOut); return 1; }
+
     if (min_count < 1) { min_count = 1; }
 
-    return get_counts();
+    int result = get_counts();
+    fclose(in);
+    fclose(out);
+    return result;
 }

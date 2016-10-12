@@ -62,6 +62,7 @@ static int window_size; // default context window size
 static int symmetric; // 0: asymmetric, 1: symmetric
 static real memory_limit; // soft limit, in gigabytes, used to estimate optimal array sizes
 static char *vocab_file, *file_head;
+static FILE *in, *out;
 
 /* Efficient string comparison */
 static int scmp( char *s1, char *s2 ) {
@@ -234,7 +235,7 @@ static int merge_files(int num) {
     FILE **fid, *fout;
     fid = malloc(sizeof(FILE) * num);
     pq = malloc(sizeof(CRECID) * num);
-    fout = stdout;
+    fout = out;
     if (verbose > 1) fprintf(stderr, "Merging cooccurrence files: processed 0 lines.");
     
     /* Open all files and add first entry of each to priority queue */
@@ -331,7 +332,7 @@ static int get_cooccurrence() {
         return 1;
     }
     
-    fid = stdin;
+    fid = in;
     sprintf(format,"%%%ds",MAX_STRING_LENGTH);
     sprintf(filename,"%s_%04d.bin",file_head, fidcounter);
     foverflow = fopen(filename,"w");
@@ -436,6 +437,13 @@ int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, 
     strcpy(file_head, args->overflowFile);
     memory_limit = args->memory;
 
+    strcpy(vocab_file, vocabIn);
+
+    in = fopen(corpusIn, "r");
+    if (in == NULL) { fprintf(stderr,"Unable to open file %s.\n", corpusIn); return 1; }
+    out = fopen(cooccurOut, "w");
+    if (out == NULL) { fprintf(stderr,"Unable to open file %s.\n", cooccurOut); return 1; }
+
     /* The memory_limit determines a limit on the number of elements in bigram_table and the overflow buffer */
     /* Estimate the maximum value that max_product can take so that this limit is still satisfied */
     rlimit = 0.85 * (real)memory_limit * 1073741824/(sizeof(CREC));
@@ -447,5 +455,8 @@ int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, 
     if (args->maxProduct > 0) { max_product = args->maxProduct; }
     if (args->overflowLength > 0) { overflow_length = args->overflowLength; }
 
-    return get_cooccurrence();
+    int result = get_cooccurrence();
+    fclose(in);
+    fclose(out);
+    return result;
 }

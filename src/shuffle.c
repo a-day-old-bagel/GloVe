@@ -43,6 +43,7 @@ static int verbose; // 0, 1, or 2
 static long long array_size; // size of chunks to shuffle individually
 static char *file_head; // temporary file string
 static real memory_limit; // soft limit, in gigabytes
+static FILE *in, *out;
 
 /* Efficient string comparison */
 static int scmp( char *s1, char *s2 ) {
@@ -85,7 +86,7 @@ static int shuffle_merge(int num) {
     int fidcounter = 0;
     CREC *array;
     char filename[MAX_STRING_LENGTH];
-    FILE **fid, *fout = stdout;
+    FILE **fid, *fout = out;
     
     array = malloc(sizeof(CREC) * array_size);
     fid = malloc(sizeof(FILE) * num);
@@ -133,7 +134,7 @@ static int shuffle_by_chunks() {
     int fidcounter = 0;
     char filename[MAX_STRING_LENGTH];
     CREC *array;
-    FILE *fin = stdin, *fid;
+    FILE *fin = in, *fid;
     array = malloc(sizeof(CREC) * array_size);
     
     fprintf(stderr,"SHUFFLING COOCCURRENCES\n");
@@ -183,22 +184,30 @@ static const ShuffleArgs DEFAULT_SHUFFLE_ARGS = {
 __declspec(dllexport)
 #endif
 int createShuffleArgs(ShuffleArgs* emptyArgs) {
-  *emptyArgs = DEFAULT_SHUFFLE_ARGS;
-  return 0;
+    *emptyArgs = DEFAULT_SHUFFLE_ARGS;
+    return 0;
 }
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 int shuffle(const ShuffleArgs* args, const char* cooccurIn, char* shufCooccurOut) {
-  file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);
+    file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);
 
-  verbose = args->verbose;
-  strcpy(file_head, args->tempFile);
-  memory_limit = args->memory;
+    verbose = args->verbose;
+    strcpy(file_head, args->tempFile);
+    memory_limit = args->memory;
 
-  if (args->arraySize > 0) { array_size = args->arraySize; }
-  else { array_size = (long long) (0.95 * (real) memory_limit * 1073741824 / (sizeof(CREC))); }
+    in = fopen(cooccurIn, "r");
+    if (in == NULL) { fprintf(stderr,"Unable to open file %s.\n", cooccurIn); return 1; }
+    out = fopen(shufCooccurOut, "w");
+    if (out == NULL) { fprintf(stderr,"Unable to open file %s.\n", shufCooccurOut); return 1; }
 
-  return shuffle_by_chunks();
+    if (args->arraySize > 0) { array_size = args->arraySize; }
+    else { array_size = (long long) (0.95 * (real) memory_limit * 1073741824 / (sizeof(CREC))); }
+
+    int result = shuffle_by_chunks();
+    fclose(in);
+    fclose(out);
+    return result;
 }
 

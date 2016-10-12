@@ -374,12 +374,13 @@ int glove(const GloveArgs* args, const char* shufCooccurIn, const char* vocabIn,
     eta = args->eta;
     use_binary = args->binary;
     model = args->model;
-//    strcpy(save_gradsq_file, args->gradsqFile);
     save_gradsq = args->saveGradsq;
-//    strcpy(vocab_file, args->vocabFile);
-//    strcpy(save_W_file, args->saveFile);
-//    strcpy(input_file, args->inputFile);
     checkpoint_every = args->checkpointEvery;
+
+    strcpy(input_file, shufCooccurIn);
+    strcpy(vocab_file, vocabIn);
+    strcpy(save_W_file, gloveOut);
+    strcpy(save_gradsq_file, gradsqOut);
 
     cost = malloc(sizeof(real) * num_threads);
     if (model != 0 && model != 1 && model != 2) model = DEFAULT_GLOVE_ARGS.model;
