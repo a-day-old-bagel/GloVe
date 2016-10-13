@@ -27,11 +27,11 @@ cd ../..
 
 if [ "$CORPUS" = 'text8' ]; then
    if [ "$1" = 'matlab' ]; then
-       matlab -nodisplay -nodesktop -nojvm -nosplash < ./eval/matlab/read_and_evaluate.m 1>&2
+       echo "! matlab evaluation support has been removed in the glove_c fork because I don't want to maintain it."
    elif [ "$1" = 'octave' ]; then
-       octave < ./eval/octave/read_and_evaluate_octave.m 1>&2
+       echo "! octave evaluation support has been removed in the glove_c fork because I don't want to maintain it."
    else
        echo "$ python eval/python/evaluate.py"
-       python eval/python/evaluate.py
+       python eval/python/evaluate.py --vocab_file demoBuild/demo/vocab.txt --vectors_file demoBuild/demo/vectors.txt
    fi
 fi
