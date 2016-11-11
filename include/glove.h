@@ -134,8 +134,7 @@ int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, 
 typedef struct _GloveArgs {
     int verbose, vectorSize, threads, iter;
     float eta, alpha, xMax;
-    int binary, model;
-    int saveGradsq, checkpointEvery, mode;
+    int binary, model, saveGradsq, checkpointEvery, mode;
 } GloveArgs;
 int createGloveArgs(GloveArgs* emptyArgs);
 int glove(const GloveArgs* args, const char* shufCooccurIn, const char* vocabIn, char* gloveOut, char* gradsqOut);
