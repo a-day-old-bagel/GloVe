@@ -347,16 +347,12 @@ static const GloveArgs DEFAULT_GLOVE_ARGS = {
         .verbose = 0, .vectorSize = 50, .threads = 8, .iter = 25, .eta = 0.05, .alpha = 0.75, .xMax = 100.f,
         .binary = 0, .model = 2, .saveGradsq = 0, .checkpointEvery = 0, .mode = 0
 };
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
+
 int createGloveArgs(GloveArgs* emptyArgs) {
     *emptyArgs = DEFAULT_GLOVE_ARGS;
     return 0;
 }
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
+
 int glove(const GloveArgs* args, const char* shufCooccurIn, const char* vocabIn, char* gloveOut, char* gradsqOut) {
     FILE *fid;
     vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);

@@ -76,7 +76,13 @@ typedef struct _CooccurArgs {
     char *overflowFile;
     int mode;
 } CooccurArgs;
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int createCooccurArgs(CooccurArgs* emptyArgs);
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, char* cooccurOut);
 
 /**
@@ -137,7 +143,13 @@ typedef struct _GloveArgs {
     int binary, model;
     int saveGradsq, checkpointEvery, mode;
 } GloveArgs;
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int createGloveArgs(GloveArgs* emptyArgs);
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int glove(const GloveArgs* args, const char* shufCooccurIn, const char* vocabIn, char* gloveOut, char* gradsqOut);
 
 /**
@@ -176,7 +188,13 @@ typedef struct _ShuffleArgs {
     char* tempFile;
     int mode;
 } ShuffleArgs;
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int createShuffleArgs(ShuffleArgs* emptyArgs);
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int shuffle(const ShuffleArgs* args, const char* cooccurIn, char* shufCooccurOut);
 
 /**
@@ -209,7 +227,13 @@ int shuffle(const ShuffleArgs* args, const char* cooccurIn, char* shufCooccurOut
 typedef struct _VocabCountArgs {
     int verbose, maxVocab, minCount, mode;
 } VocabCountArgs;
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int createVocabCountArgs(VocabCountArgs* emptyArgs);
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 int vocabCount(const VocabCountArgs* args, const char* corpusIn, char* vocabOut);
 
 #ifdef __cplusplus

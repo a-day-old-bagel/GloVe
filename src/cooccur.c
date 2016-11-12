@@ -415,16 +415,12 @@ static const CooccurArgs DEFAULT_COOCCUR_ARGS = {
         .verbose = 0, .symmetric = 1, .windowSize = 15, .memory = 4, .maxProduct = -1,
         .overflowLength = -1, .overflowFile = "overflow", .mode = 0
 };
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
+
 int createCooccurArgs(CooccurArgs* emptyArgs) {
     *emptyArgs = DEFAULT_COOCCUR_ARGS;
     return 0;
 }
-#ifdef _WIN32
-__declspec(dllexport)
-#endif
+
 int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, char* cooccurOut) {
     real rlimit, n = 1e5;
     vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
