@@ -344,7 +344,7 @@ static int train_glove() {
 }
 
 static const GloveArgs DEFAULT_GLOVE_ARGS = {
-        .verbose = 0, .vectorSize = 50, .threads = 8, .iter = 25, .eta = 0.05, .alpha = 0.75, .xMax = 100.f,
+        .verbose = 0, .vectorSize = 50, .threads = 8, .iter = 25, .eta = 0.05f, .alpha = 0.75f, .xMax = 100.f,
         .binary = 0, .model = 2, .saveGradsq = 0, .checkpointEvery = 0, .mode = 0
 };
 

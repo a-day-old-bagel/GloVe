@@ -178,7 +178,7 @@ static int shuffle_by_chunks() {
 }
 
 static const ShuffleArgs DEFAULT_SHUFFLE_ARGS = {
-        .verbose = 0, .memory = 4.0, .arraySize = -1, .tempFile = "temp_shuffle", .mode = 0
+        .verbose = 0, .memory = 4.f, .arraySize = -1, .tempFile = "temp_shuffle", .mode = 0
 };
 
 int createShuffleArgs(ShuffleArgs* emptyArgs) {

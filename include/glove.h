@@ -140,8 +140,7 @@ int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, 
 typedef struct _GloveArgs {
     int verbose, vectorSize, threads, iter;
     float eta, alpha, xMax;
-    int binary, model;
-    int saveGradsq, checkpointEvery, mode;
+    int binary, model, saveGradsq, checkpointEvery, mode;
 } GloveArgs;
 #ifdef _WIN32
 __declspec(dllexport)
