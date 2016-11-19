@@ -35,6 +35,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <process.h>
+#include <malloc.h>
 #elif defined(UNIX)
 #include <pthread.h>
 #endif
@@ -76,12 +77,20 @@ static void initialize_parameters() {
 	vector_size++; // Temporarily increment to allocate space for bias
     
 	/* Allocate space for word vectors and context word vectors, and correspodning gradsq */
+#if defined (_WIN32)
+	W = _aligned_malloc(128, 2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
+#elif defined (UNIX)
 	a = posix_memalign((void **)&W, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
+#endif
     if (W == NULL) {
         fprintf(stderr, "Error allocating memory for W\n");
         exit(1);
     }
-    a = posix_memalign((void **)&gradsq, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
+#if defined (_WIN32)
+	gradsq = _aligned_malloc(128, 2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
+#elif defined (UNIX)
+	a = posix_memalign((void **)&gradsq, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
+#endif
 	if (gradsq == NULL) {
         fprintf(stderr, "Error allocating memory for gradsq\n");
         exit(1);
@@ -175,7 +184,12 @@ glove_thread(void *vid) {
     free(W_updates2);
     
     fclose(fin);
-    pthread_exit(NULL);
+#if defined (_WIN32)
+	_endthreadex(NULL);
+#elif defined (UNIX)
+	pthread_exit(NULL);
+#endif
+	return NULL;
 }
 
 /* Save params to file */
@@ -305,7 +319,7 @@ static int train_glove() {
     fin = fopen(input_file, "rb");
     if (fin == NULL) {fprintf(stderr,"Unable to open cooccurrence file %s.\n",input_file); return 1;}
     fseek(fin, 0, SEEK_END);
-    file_size = ftello(fin);
+    file_size = ftell(fin);
     num_lines = file_size/(sizeof(CREC)); // Assuming the file isn't corrupt and consists only of CREC's
     fclose(fin);
     fprintf(stderr,"Read %lld lines.\n", num_lines);
