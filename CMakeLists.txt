@@ -8,8 +8,10 @@ option(GLOVE_BUILD_SHARED "Build shared library"    ON)
 option(GLOVE_BUILD_TESTS  "Build tests"             ON)
 
 if(WIN32)
-   message(WARNING "cmaking for windows")
+   message(WARNING "cmaking glove for windows")
+   set(CMAKE_C_FLAGS " /MT /Ox /Ob2")
 else()
+   message(WARNING "cmaking glove for gcc")
    set(CMAKE_C_FLAGS " -fPIC -lm -pthread -Ofast -march=native -funroll-loops -Wno-unused-result")
 endif()
 

@@ -29,9 +29,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <pthread.h>
 #include <time.h>
 #include "../include/glove.h"
+
+#if defined(_WIN32)
+#include <windows.h>
+#include <process.h>
+#elif defined(UNIX)
+#include <pthread.h>
+#endif
 
 #define _FILE_OFFSET_BITS 64
 #define MAX_STRING_LENGTH 1000
@@ -95,14 +101,18 @@ static inline real check_nan(real update) {
 }
 
 /* Train the GloVe model */
-static void *glove_thread(void *vid) {
+static void *
+#if defined(_WIN32)
+__stdcall
+#endif
+glove_thread(void *vid) {
     long long a, b ,l1, l2;
     long long id = *(long long*)vid;
     CREC cr;
     real diff, fdiff, temp1, temp2;
     FILE *fin;
     fin = fopen(input_file, "rb");
-    fseeko(fin, (num_lines / num_threads * id) * (sizeof(CREC)), SEEK_SET); //Threads spaced roughly equally throughout file
+    fseek(fin, (num_lines / num_threads * id) * (sizeof(CREC)), SEEK_SET); //Threads spaced roughly equally throughout file
     cost[id] = 0;
     
     real* W_updates1 = (real*)malloc(vector_size * sizeof(real));
@@ -294,7 +304,7 @@ static int train_glove() {
     
     fin = fopen(input_file, "rb");
     if (fin == NULL) {fprintf(stderr,"Unable to open cooccurrence file %s.\n",input_file); return 1;}
-    fseeko(fin, 0, SEEK_END);
+    fseek(fin, 0, SEEK_END);
     file_size = ftello(fin);
     num_lines = file_size/(sizeof(CREC)); // Assuming the file isn't corrupt and consists only of CREC's
     fclose(fin);
@@ -306,7 +316,11 @@ static int train_glove() {
     if (verbose > 0) fprintf(stderr,"vocab size: %lld\n", vocab_size);
     if (verbose > 0) fprintf(stderr,"x_max: %lf\n", x_max);
     if (verbose > 0) fprintf(stderr,"alpha: %lf\n", alpha);
-    pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
+#if defined (_WIN32)
+	HANDLE *wt = (HANDLE*)malloc(num_threads * sizeof(HANDLE));
+#elif defined (UNIX)
+	pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
+#endif
     lines_per_thread = (long long *) malloc(num_threads * sizeof(long long));
     
     time_t rawtime;
@@ -319,8 +333,13 @@ static int train_glove() {
         lines_per_thread[a] = num_lines / num_threads + num_lines % num_threads;
         long long *thread_ids = (long long*)malloc(sizeof(long long) * num_threads);
         for (a = 0; a < num_threads; a++) thread_ids[a] = a;
-        for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, glove_thread, (void *)&thread_ids[a]);
-        for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
+#if defined (_WIN32)
+		for (a = 0; a < num_threads; a++) wt[a] = (HANDLE)_beginthreadex(NULL, 0, &glove_thread, (void*)&thread_ids[a], 0, NULL);
+		for (a = 0; a < num_threads; a++) WaitForSingleObject(wt[a], INFINITE);
+#elif defined (UNIX)
+		for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, glove_thread, (void *)&thread_ids[a]);
+		for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
+#endif
         for (a = 0; a < num_threads; a++) total_cost += cost[a];
         free(thread_ids);
 
@@ -338,7 +357,11 @@ static int train_glove() {
         }
 
     }
+#if defined (_WIN32)
+	free(wt);
+#elif defined (UNIX)
     free(pt);
+#endif
     free(lines_per_thread);
     return save_params(0);
 }
