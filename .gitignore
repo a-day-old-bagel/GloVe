@@ -38,3 +38,7 @@ build/*
 
 # OS X stuff
 ._*
+
+# clion
+/.idea
+

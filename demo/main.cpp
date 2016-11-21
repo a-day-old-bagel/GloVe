@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   CooccurArgs cArgs;
   createCooccurArgs(&cArgs);
   cArgs.verbose = 2;
-  cArgs.memory = 24.f;  // if you don't have 32 GB of RAM, you might want to change this
+  cArgs.memory = 4.f;  // if you don't have 32 GB of RAM, you might want to change this
   cooccur(&cArgs, corpus, vocab, (char*)cooccurence);
 
   ShuffleArgs sArgs;

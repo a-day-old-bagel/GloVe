@@ -36,7 +36,7 @@
 #include <windows.h>
 #include <process.h>
 #include <malloc.h>
-#elif defined(UNIX)
+#else
 #include <pthread.h>
 #endif
 
@@ -79,7 +79,7 @@ static void initialize_parameters() {
 	/* Allocate space for word vectors and context word vectors, and correspodning gradsq */
 #if defined (_WIN32)
 	W = _aligned_malloc(128, 2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
-#elif defined (UNIX)
+#else
 	a = posix_memalign((void **)&W, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
 #endif
     if (W == NULL) {
@@ -88,7 +88,7 @@ static void initialize_parameters() {
     }
 #if defined (_WIN32)
 	gradsq = _aligned_malloc(128, 2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
-#elif defined (UNIX)
+#else
 	a = posix_memalign((void **)&gradsq, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
 #endif
 	if (gradsq == NULL) {
@@ -186,7 +186,7 @@ glove_thread(void *vid) {
     fclose(fin);
 #if defined (_WIN32)
 	_endthreadex(NULL);
-#elif defined (UNIX)
+#else
 	pthread_exit(NULL);
 #endif
 	return NULL;
@@ -332,7 +332,7 @@ static int train_glove() {
     if (verbose > 0) fprintf(stderr,"alpha: %lf\n", alpha);
 #if defined (_WIN32)
 	HANDLE *wt = (HANDLE*)malloc(num_threads * sizeof(HANDLE));
-#elif defined (UNIX)
+#else
 	pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
 #endif
     lines_per_thread = (long long *) malloc(num_threads * sizeof(long long));
@@ -350,7 +350,7 @@ static int train_glove() {
 #if defined (_WIN32)
 		for (a = 0; a < num_threads; a++) wt[a] = (HANDLE)_beginthreadex(NULL, 0, &glove_thread, (void*)&thread_ids[a], 0, NULL);
 		for (a = 0; a < num_threads; a++) WaitForSingleObject(wt[a], INFINITE);
-#elif defined (UNIX)
+#else
 		for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, glove_thread, (void *)&thread_ids[a]);
 		for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
 #endif
@@ -373,7 +373,7 @@ static int train_glove() {
     }
 #if defined (_WIN32)
 	free(wt);
-#elif defined (UNIX)
+#else
     free(pt);
 #endif
     free(lines_per_thread);
