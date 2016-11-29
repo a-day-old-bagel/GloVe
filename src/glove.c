@@ -78,7 +78,7 @@ static void initialize_parameters() {
     
 	/* Allocate space for word vectors and context word vectors, and correspodning gradsq */
 #if defined (_WIN32)
-	W = _aligned_malloc(128, 2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
+	W = _aligned_malloc(2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
 #else
 	a = posix_memalign((void **)&W, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
 #endif
@@ -87,7 +87,7 @@ static void initialize_parameters() {
         exit(1);
     }
 #if defined (_WIN32)
-	gradsq = _aligned_malloc(128, 2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
+	gradsq = _aligned_malloc(2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
 #else
 	a = posix_memalign((void **)&gradsq, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
 #endif
@@ -137,7 +137,7 @@ glove_thread(void *vid) {
         
         /* Calculate cost, save diff for gradients */
         diff = 0;
-        for (b = 0; b < vector_size; b++) diff += W[b + l1] * W[b + l2]; // dot product of word and context word vector
+        for (b = 0; b < vector_size; b++) { fprintf(stderr, "thread %lli iteration %lli\n", id, b); diff += W[b + l1] * W[b + l2]; } // dot product of word and context word vector
         diff += W[vector_size + l1] + W[vector_size + l2] - log(cr.val); // add separate bias for each word
         fdiff = (cr.val > x_max) ? diff : pow(cr.val / x_max, alpha) * diff; // multiply weighting function (f) with diff
 

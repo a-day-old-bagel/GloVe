@@ -32,6 +32,7 @@
 *.dSYM/
 
 /build
+/build64
 /demoBuild
 build/*
 *.swp
