@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   createGloveArgs(&gArgs);
   gArgs.verbose = 2;
   gArgs.binary = 2;
-  gArgs.threads = 12; // if you don't have 12 logical cores, you might want to change this
+  gArgs.threads = 4; // if you don't have 12 logical cores, you might want to change this
   gArgs.xMax = 10;
   gArgs.iter = 15;
   glove(&gArgs, cooccurenceShuf, vocab, (char*)save, (char*)gradsq);
