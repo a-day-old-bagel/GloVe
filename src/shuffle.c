@@ -140,7 +140,7 @@ static int shuffle_by_chunks() {
     fprintf(stderr,"SHUFFLING COOCCURRENCES\n");
     if (verbose > 0) fprintf(stderr,"array size: %lld\n", array_size);
     sprintf(filename,"%s_%04d.bin",file_head, fidcounter);
-    fid = fopen(filename,"w");
+    fid = fopen(filename,"wb");
     if (fid == NULL) {
         fprintf(stderr, "Unable to open file %s.\n",filename);
         return 1;
@@ -156,7 +156,7 @@ static int shuffle_by_chunks() {
             fclose(fid);
             fidcounter++;
             sprintf(filename,"%s_%04d.bin",file_head, fidcounter);
-            fid = fopen(filename,"w");
+            fid = fopen(filename,"wb");
             if (fid == NULL) {
                 fprintf(stderr, "Unable to open file %s.\n",filename);
                 return 1;
@@ -193,9 +193,9 @@ int shuffle(const ShuffleArgs* args, const char* cooccurIn, char* shufCooccurOut
     strcpy(file_head, args->tempFile);
     memory_limit = args->memory;
 
-    in = fopen(cooccurIn, "r");
+    in = fopen(cooccurIn, "rb");
     if (in == NULL) { fprintf(stderr,"Unable to open file %s.\n", cooccurIn); return 1; }
-    out = fopen(shufCooccurOut, "w");
+    out = fopen(shufCooccurOut, "wb");
     if (out == NULL) { fprintf(stderr,"Unable to open file %s.\n", shufCooccurOut); return 1; }
 
     if (args->arraySize > 0) { array_size = args->arraySize; }
