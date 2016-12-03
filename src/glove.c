@@ -141,11 +141,6 @@ glove_thread(void *vid) {
         /* Calculate cost, save diff for gradients */
         diff = 0;
         for (b = 0; b < vector_size; b++) {
-			fprintf(stderr, "thread %lli iteration %lli: W = %lli l1 = %lli, l2 = %lli\n", id, b, 2 * vocab_size * (vector_size + 1) * sizeof(real), l1, l2);
-			assert(b + l1 >= 0);
-			assert(b + l2 >= 0);
-			assert(b + l1 < 2 * vocab_size * (vector_size + 1) * sizeof(real));
-			assert(b + l2 < 2 * vocab_size * (vector_size + 1) * sizeof(real));
 			diff += W[b + l1] * W[b + l2];
 		} // dot product of word and context word vector
         diff += W[vector_size + l1] + W[vector_size + l2] - log(cr.val); // add separate bias for each word
