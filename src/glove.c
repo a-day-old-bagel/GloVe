@@ -36,11 +36,11 @@
 #include <windows.h>
 #include <process.h>
 #include <malloc.h>
+#include <cassert>
 #else
 #include <pthread.h>
+#include <assert.h>
 #endif
-
-#include <cassert>
 
 #define _FILE_OFFSET_BITS 64
 #define MAX_STRING_LENGTH 1000
