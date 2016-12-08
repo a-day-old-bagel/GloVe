@@ -81,7 +81,6 @@ static void initialize_parameters() {
 	/* Allocate space for word vectors and context word vectors, and correspodning gradsq */
 #if defined (_WIN32)
 	W = _aligned_malloc(2 * vocab_size * (vector_size + 1) * sizeof(real), 128);
-	fprintf(stderr, "allocated %lli to W.", 2 * vocab_size * (vector_size + 1) * sizeof(real));
 #else
 	a = posix_memalign((void **)&W, 128, 2 * vocab_size * (vector_size + 1) * sizeof(real)); // Might perform better than malloc
 #endif

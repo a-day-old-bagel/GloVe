@@ -422,6 +422,13 @@ int createCooccurArgs(CooccurArgs* emptyArgs) {
 }
 
 int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, char* cooccurOut) {
+    /*if (args->verbose) {
+        fprintf(stderr, "cooccur received the following args:\nsymmetric: %i\nwindowSize: %i\nmemory: %f\nmaxProduct: "
+                "%i\noverflowLength: %i\noverflowFile: %s\nmode: %i\ncorpusIn: %s\nvocabIn: %s\ncooccurOut: %s\n",
+                args->symmetric, args->windowSize, args->memory, args->maxProduct, args->overflowLength,
+                args->overflowFile, args->mode, corpusIn, vocabIn, cooccurOut);
+    }*/
+
     real rlimit, n = 1e5;
     vocab_file = malloc(sizeof(char) * MAX_STRING_LENGTH);
     file_head = malloc(sizeof(char) * MAX_STRING_LENGTH);

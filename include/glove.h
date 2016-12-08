@@ -57,7 +57,7 @@ extern "C" {
  *	mode <int>
  *    If <int> = 0 (default), interpret the below arguments as file names and expect to hit disk;
  *    If <int> = 1, interpret the below arguments as strings containing the respective data themselves and expect to use
- *    lots of memory
+ *    lots of memory [NOT IMPLEMENTED YET]
  *
  * The following arguments are in addition to the CooccurArgs struct:
  *
@@ -121,7 +121,7 @@ int cooccur(const CooccurArgs* args, const char* corpusIn, const char* vocabIn, 
  *	mode <int>
  *    If <int> = 0 (default), interpret the below arguments as file names and expect to hit disk;
  *    If <int> = 1, interpret the below arguments as strings containing the respective data themselves and expect to use
- *    lots of memory
+ *    lots of memory [NOT IMPLEMENTED YET]
  *
  * The following arguments are in addition to the GloveArgs struct:
  *
@@ -171,7 +171,7 @@ int glove(const GloveArgs* args, const char* shufCooccurIn, const char* vocabIn,
  *	mode <int>
  *    If <int> = 0 (default), interpret the below arguments as file names and expect to hit disk;
  *    If <int> = 1, interpret the below arguments as strings containing the respective data themselves and expect to use
- *    lots of memory
+ *    lots of memory [NOT IMPLEMENTED YET]
  *
  * The following arguments are in addition to the ShuffleArgs struct:
  *
@@ -214,7 +214,7 @@ int shuffle(const ShuffleArgs* args, const char* cooccurIn, char* shufCooccurOut
  *	mode <int>
  *    If <int> = 0 (default), interpret the below arguments as file names and expect to hit disk;
  *    If <int> = 1, interpret the below arguments as strings containing the respective data themselves and expect to use
- *    lots of memory
+ *    lots of memory [NOT IMPLEMENTED YET]
  *
  * The following arguments are in addition to the VocabCountArgs struct:
  *
